@@ -1,13 +1,27 @@
 {
-  "name": "chat-example",
-  "version": "0.0.0",
-  "description": "A chat example to showcase how to use `socket.io` with a static `express` server with `async` for control flow.",
+  "name": "lord-mvc-node",
+  "version": "1.0.0",
+  "description": "A rebuild of legend of the red dragon in node",
   "main": "server.js",
   "repository": "",
   "author": "Mostafa Eweda <mo.eweda@gmail.com>",
   "dependencies": {
     "async": "~0.2.8",
-    "express": "~3.2.4",
+    "bcrypt-nodejs": "0.0.3",
+    "bluebird": "^3.3.5",
+    "body-parser": "~1.0.0",
+    "connect-flash": "^0.1.1",
+    "cookie-parser": "~1.0.0",
+    "ejs": "~0.8.5",
+    "express": "^4.0.0",
+    "express-session": "~1.0.0",
+    "jsonwebtoken": "^6.2.0",
+    "method-override": "~1.0.0",
+    "mongoose": "^4.4.14",
+    "morgan": "^1.7.0",
+    "passport": "^0.3.2",
+    "passport-local": "^1.0.0",
+    "serve-favicon": "^2.3.0",
     "socket.io": "~0.9.14"
   }
 }
