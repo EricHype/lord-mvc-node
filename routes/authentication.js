@@ -2,11 +2,11 @@
 module.exports = function(routes, passport) {
   
     routes.get('/', function(req, res) {
-        res.render('login.ejs'); // load the index.ejs file
+        res.render('login.ejs', { message: req.flash('loginMessage') }); // load the index.ejs file
     });
     
     routes.get('/login', function(req, res) {
-        res.render('login.ejs'); // load the index.ejs file
+        res.render('login.ejs', { message: req.flash('loginMessage') }); // load the index.ejs file
     });
     
     routes.post('/login', passport.authenticate('local-login', {
