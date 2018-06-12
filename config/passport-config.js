@@ -1,80 +1,46 @@
-var LocalStrategy   = require('passport-local').Strategy;
-var User            = require('../models/user');
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+const passportJWT = require("passport-jwt");
+const JWTStrategy   = passportJWT.Strategy;
+const ExtractJWT = passportJWT.ExtractJwt;
 
+  
+var User            = require('../models/user');
+var config = require('./auth-config');
 
 module.exports = function(passport) {
-
-    passport.serializeUser(function(user, done) {
-        done(null, user.id);
-    });
-    
-    passport.deserializeUser(function(id, done) {
-        User.findById(id, function(err, user) {
-            done(err, user);
-        });
-    });
-    
-    passport.use('local-signup', new LocalStrategy({
-        // by default, local strategy uses username and password, we will override with email
-        usernameField : 'email',
-        passwordField : 'password',
-        passReqToCallback : true // allows us to pass back the entire request to the callback
+  var opts = {};
+  opts.secretOrKey = config.secret;
+  
+  passport.use(new LocalStrategy({
+        usernameField: 'email',
+        passwordField: 'password'
+    }, 
+    function (email, password, cb) {
+      return User.findOne({email, password}).then(user => {
+               if (!user) {
+                   return cb(null, false, {message: 'Incorrect email or password.'});
+               }
+               return cb(null, user, {message: 'Logged In Successfully'});
+          })
+          .catch(err => cb(err));
+  }));
+  
+  passport.use(new JWTStrategy({
+        jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken(),
+        secretOrKey   : config.secret
     },
-    function(req, email, password, done) {
-    
-        process.nextTick(function() {
-             User.findOne({ 'email' :  email }, function(err, user) {
-                 if (err) {
-                    return done(err);
-                 }
-                 
-                 if (user) {
-                    return done(null, false, req.flash('signupMessage', 'That email is already taken.'));
-                 }
-                 
-                 var newUser = new User();
+    function (jwtPayload, cb) {
 
-                // set the user's local credentials
-                newUser.email    = email;
-                newUser.password = newUser.generateHash(password);
-
-                // save the user
-                newUser.save(function(err) {
-                    if (err)
-                        throw err;
-                    return done(null, newUser);
-                });
-             });
-        });
-    }));
-    
-     passport.use('local-login', new LocalStrategy({
-        // by default, local strategy uses username and password, we will override with email
-        usernameField : 'email',
-        passwordField : 'password',
-        passReqToCallback : true // allows us to pass back the entire request to the callback
-    },
-    function(req, email, password, done) { // callback with email and password from our form
-
-        // find a user whose email is the same as the forms email
-        // we are checking to see if the user trying to login already exists
-        User.findOne({ 'email' :  email }, function(err, user) {
-            // if there are any errors, return the error before anything else
-            if (err)
-                return done(err);
-
-            // if no user is found, return the message
-            if (!user)
-                return done(null, false, req.flash('loginMessage', 'No user found.')); // req.flash is the way to set flashdata using connect-flash
-
-            // if the user is found but the password is wrong
-            if (!user.validPassword(password))
-                return done(null, false, req.flash('loginMessage', 'Oops! Wrong password.')); // create the loginMessage and save it to session as flashdata
-
-            // all is well, return successful user
-            return done(null, user);
-        });
-
-    }));
-    
+        //find the user in db if needed. This functionality may be omitted if you store everything you'll need in JWT payload.
+        return User.findOneById(jwtPayload.id)
+            .then(user => {
+                return cb(null, user);
+            })
+            .catch(err => {
+                return cb(err);
+            });
+    }
+  ));
+  
 };

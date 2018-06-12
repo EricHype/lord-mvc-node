@@ -1,35 +1,48 @@
 
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+
+var User = require('../models/user');
+var config = require('../config/auth-config');
+var Promise = require('bluebird');
+
+config.secret
+
+
 module.exports = function(routes, passport) {
   
-    routes.get('/', function(req, res) {
-        res.render('login.ejs', { message: req.flash('loginMessage') }); // load the index.ejs file
-    });
+  
+  routes.post('/authenticate', function(req, res) {
     
-    routes.get('/login', function(req, res) {
-        res.render('login.ejs', { message: req.flash('loginMessage') }); // load the index.ejs file
-    });
-    
-    routes.post('/login', passport.authenticate('local-login', {
-        successRedirect : '/profile', // redirect to the secure profile section
-        failureRedirect : '/login', // redirect back to the signup page if there is an error
-        failureFlash : true // allow flash messages
-    }));
-    
-    routes.get('/signup', function(req, res) {
-
-        // render the page and pass in any flash data if it exists
-        res.render('signup.ejs', { message: req.flash('signupMessage') });
-    });
-    
-    routes.post('/signup', passport.authenticate('local-signup', {
-        successRedirect : '/game', // redirect to the secure profile section
-        failureRedirect : '/signup', // redirect back to the signup page if there is an error
-        failureFlash : true // allow flash messages
-    }));
-    
-    routes.get('/logout', function(req, res) {
-        req.logout();
-        res.redirect('/');
-    });
-    
+    passport.authenticate('local', {session: false}, (err, user, info) => {
+          if (err || !user) {
+              return res.status(400).json({
+                  message: 'Something is not right',
+                  user   : user
+              });
+          }
+         req.login(user, {session: false}, (err) => {
+             if (err) {
+                 res.send(err);
+             }
+             // generate a signed son web token with the contents of user object and return it in the response
+             const token = jwt.sign(user, config.secret);
+             return res.json({user, token});
+          });
+      })(req, res);
+  });
+  
+  routes.post('/register', function(req, res){
+      const saltRounds = 10;
+      bcrypt.hash(res.password, saltRounds)
+      .then(function(hash) {
+          // Store hash in your password DB.
+          return User.create({email: req.email, password: hash});
+      }).then(function(user){
+         res.redirect('/authenticate');
+      })
+  })
+  
+  
+  
 };
