@@ -1,35 +1,36 @@
 
+var jwt = require('jwt-simple');
+var User = require('../models/user');
+var config = require('../config/auth-config');
+var Promise = require('bluebird');
+
+
 module.exports = function(routes, passport) {
   
-    routes.get('/', function(req, res) {
-        res.render('login.ejs', { message: req.flash('loginMessage') }); // load the index.ejs file
-    });
-    
-    routes.get('/login', function(req, res) {
-        res.render('login.ejs', { message: req.flash('loginMessage') }); // load the index.ejs file
-    });
-    
-    routes.post('/login', passport.authenticate('local-login', {
-        successRedirect : '/profile', // redirect to the secure profile section
-        failureRedirect : '/login', // redirect back to the signup page if there is an error
-        failureFlash : true // allow flash messages
-    }));
-    
-    routes.get('/signup', function(req, res) {
+  
+routes.post('/authenticate', function(req, res) {
+  User.findOne({ email: req.body.email}) 
+  .then(function(user) {
 
-        // render the page and pass in any flash data if it exists
-        res.render('signup.ejs', { message: req.flash('signupMessage') });
+    if (!user) {
+      return res.send({success: false, msg: 'Authentication failed. User not found.'});
+    } 
+      // check if password matches
+    user.comparePassword(req.body.password, function (err, isMatch) {
+      if (isMatch && !err) {
+        // if user is found and password is right create a token
+        var token = jwt.encode(user, config.secret);
+        // return the information including token as JSON
+        return res.json({success: true, token: 'JWT ' + token});
+      }
+        
+      return res.send({success: false, msg: 'Authentication failed. Wrong password.'});
     });
     
-    routes.post('/signup', passport.authenticate('local-signup', {
-        successRedirect : '/game', // redirect to the secure profile section
-        failureRedirect : '/signup', // redirect back to the signup page if there is an error
-        failureFlash : true // allow flash messages
-    }));
-    
-    routes.get('/logout', function(req, res) {
-        req.logout();
-        res.redirect('/');
-    });
+  })
+  .catch(function(err){
+    if (err) throw err;
+  });
+});
     
 };
