@@ -5,7 +5,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
 var mongoose = require('mongoose');
-var passport = require('passport');
+const passport = require('passport');
 var flash    = require('connect-flash');
 var morgan       = require('morgan');
 var session      = require('express-session');
@@ -51,6 +51,7 @@ app.use(flash()); // use connect-flash for flash messages stored in session
 
 require('./config/passport-config')(passport);
 require('./routes/authentication')(app, passport);
+require('./routes/user')(app, passport);
 
 app.use(function(err, req, res, next) {
   res.status(err.status || 500);
