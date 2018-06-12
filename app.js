@@ -18,7 +18,12 @@ var dbConfig  = require('./config/db-config');
 var authConfig = require('./config/auth-config');
 
 mongoose.Promise = require('bluebird');
-mongoose.connect(dbConfig.mongoUri);
+const option = {
+  socketTimeoutMS: 30000,
+  keepAlive: true,
+  reconnectTries: 30000
+};
+mongoose.connect(dbConfig.mongoUri, option);
 
 var app = express();
 app.set("env", "development");
